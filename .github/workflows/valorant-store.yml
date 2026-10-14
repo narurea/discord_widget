@@ -1,4 +1,4 @@
-name: Update VALORANT store widget
+name: Send VALORANT daily store
 
 on:
   schedule:
@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write # publishes the banner image to the widget-assets branch
+  contents: write # only used by widget output, to publish the banner to the widget-assets branch
 
 concurrency:
-  group: store-widget
+  group: valorant-store
 
 jobs:
   update:
@@ -36,13 +36,14 @@ jobs:
           key: riot-cookies-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: riot-cookies-
 
-      - name: Sync store to Discord
+      - name: Send store to Discord
         run: npm start
         env:
           RIOT_COOKIES: ${{ secrets.RIOT_COOKIES }}
           COOKIE_JAR_PATH: ${{ secrets.COOKIE_JAR_KEY != '' && '.cache/riot-cookies.enc' || '' }}
           COOKIE_JAR_KEY: ${{ secrets.COOKIE_JAR_KEY }}
           VALORANT_REGION: ${{ vars.VALORANT_REGION }}
+          DISCORD_OUTPUTS: ${{ vars.DISCORD_OUTPUTS }}
           DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
           DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
           DISCORD_IDENTITY_ID: ${{ secrets.DISCORD_IDENTITY_ID }}

@@ -9,7 +9,8 @@ import {
 } from '../src/cookies.js';
 import { extractTokens, parseStorefront, regionToShard, VP_CURRENCY_ID } from '../src/riot.js';
 import { buildSkinIndex, describeOffers } from '../src/skins.js';
-import { buildWidgetFields } from '../src/discord.js';
+import { buildWidgetFields } from '../src/widget.js';
+import { buildStoreMessage } from '../src/dm.js';
 import { renderBanner } from '../src/banner.js';
 
 test('parseCookieHeader accepts a cookie header or a bare ssid', () => {
@@ -154,4 +155,40 @@ test('renderBanner returns a PNG even when images are missing', async () => {
     { name: 'B', price: 875, image: '/does/not/exist.png', tierColor: null },
   ]);
   assert.deepEqual([...png.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47]);
+});
+
+test('buildStoreMessage lists skins, total, refresh time and the banner', () => {
+  const message = buildStoreMessage({
+    skins: [
+      { name: 'プライム ヴァンダル', price: 1775 },
+      { name: 'エゴ ナイフ', price: 875 },
+    ],
+    riotId: 'Player#JP1',
+    refreshesAt: '2026-10-15T00:00:00Z',
+    bannerFileName: 'store-2026-10-14.png',
+    timeZone: 'Asia/Tokyo',
+    now: new Date('2026-10-14T00:05:00Z'),
+  });
+
+  assert.equal(message.embeds.length, 1);
+  const [embed] = message.embeds;
+  assert.equal(embed.title, '10/14 のデイリーストア');
+  assert.match(embed.description, /\*\*プライム ヴァンダル\*\*　1,775 VP/);
+  assert.match(embed.description, /合計 \*\*2,650 VP\*\*/);
+  assert.match(embed.description, /<t:1792022400:R>/);
+  assert.deepEqual(embed.image, { url: 'attachment://store-2026-10-14.png' });
+  assert.deepEqual(embed.footer, { text: 'Player#JP1' });
+});
+
+test('buildStoreMessage adds a night market embed when it is open', () => {
+  const message = buildStoreMessage({
+    skins: [{ name: 'A', price: 875 }],
+    nightMarket: [{ name: 'B', price: 1522, basePrice: 2175, discountPercent: 30 }],
+    riotId: '',
+    refreshesAt: '2026-10-15T00:00:00Z',
+    timeZone: 'UTC',
+  });
+  assert.equal(message.embeds.length, 2);
+  assert.equal(message.embeds[0].footer, undefined);
+  assert.equal(message.embeds[1].description, '**B**　~~2,175 VP~~ → 1,522 VP (-30%)');
 });

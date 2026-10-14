@@ -1,3 +1,5 @@
+import { discordRequest } from './discord-api.js';
+
 // Field types accepted by the Application Identity Profile API.
 const TEXT = 1;
 const NUMBER = 2;
@@ -43,30 +45,10 @@ export function buildWidgetFields({ skins, riotId, refreshesAt, bannerUrl, timeZ
 }
 
 export async function updateWidget({ applicationId, userId, identityId, botToken }, username, fields) {
-  const url = `https://discord.com/api/v9/applications/${applicationId}/users/${userId}/identities/${identityId}/profile`;
-  const body = JSON.stringify({ username, data: { dynamic: fields } });
-
-  for (let attempt = 1; attempt <= 5; attempt++) {
-    const response = await fetch(url, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bot ${botToken}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'valorant-store-discord-widget',
-      },
-      body,
-    });
-
-    if (response.ok) return;
-
-    if (response.status === 429) {
-      const retryAfter = Number(response.headers.get('retry-after')) || 5;
-      console.warn(`Discord rate limited the request; retrying in ${retryAfter}s.`);
-      await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
-      continue;
-    }
-
-    throw new Error(`Discord API returned ${response.status}: ${await response.text()}`);
-  }
-  throw new Error('Discord API kept rate limiting the request.');
+  await discordRequest(
+    botToken,
+    'PATCH',
+    `/v9/applications/${applicationId}/users/${userId}/identities/${identityId}/profile`,
+    { username, data: { dynamic: fields } },
+  );
 }

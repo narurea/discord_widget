@@ -6,7 +6,8 @@ import { getSession, getStorefront, parseStorefront, RiotAuthError } from './rio
 import { describeOffers, loadSkinIndex } from './skins.js';
 import { renderBanner } from './banner.js';
 import { publishToBranch } from './github-assets.js';
-import { buildWidgetFields, updateWidget } from './discord.js';
+import { buildWidgetFields, updateWidget } from './widget.js';
+import { buildStoreMessage, sendErrorDm, sendStoreDm } from './dm.js';
 
 async function login(riot) {
   const fromSecret = parseCookieHeader(riot.cookies);
@@ -23,37 +24,9 @@ async function login(riot) {
   return getSession({ cookies: fromSecret, region: riot.region });
 }
 
-async function main() {
-  const dryRun = process.argv.includes('--dry-run');
-  const config = loadConfig();
-  assertConfig(config, { dryRun });
-
-  const session = await login(config.riot);
-  writeCookieJar(config.riot.cookieJarPath, config.riot.cookieJarKey, session.cookies);
-  console.log(`Logged in as ${session.riotId || session.puuid} (${session.region}).`);
-
-  const [storefront, skinIndex] = await Promise.all([
-    getStorefront(session),
-    loadSkinIndex(config.language),
-  ]);
-  const store = parseStorefront(storefront);
-  const skins = describeOffers(store.daily, skinIndex);
-  if (skins.length === 0) throw new Error('The storefront did not contain any daily skins.');
-
-  for (const skin of skins) console.log(`  ${skin.name} - ${skin.price} VP`);
-
-  const now = new Date();
-  const fileName = `store-${now.toISOString().slice(0, 10)}.png`;
-  const banner = await renderBanner(skins, { fontPath: config.banner.fontPath });
-  mkdirSync(config.banner.outputDir, { recursive: true });
-  writeFileSync(join(config.banner.outputDir, fileName), banner);
-  writeFileSync(
-    join(config.banner.outputDir, 'store.json'),
-    JSON.stringify({ riotId: session.riotId, refreshesAt: store.refreshesAt, skins }, null, 2),
-  );
-
+async function sendToWidget(config, { session, store, skins, banner, fileName, now }) {
   let bannerUrl = null;
-  if (!dryRun && config.banner.publish && config.banner.githubRepository && config.banner.githubToken) {
+  if (config.banner.publish && config.banner.githubRepository && config.banner.githubToken) {
     bannerUrl = await publishToBranch({
       repository: config.banner.githubRepository,
       token: config.banner.githubToken,
@@ -72,18 +45,76 @@ async function main() {
     timeZone: config.timeZone,
     now,
   });
-
-  if (dryRun) {
-    console.log(`Dry run: banner saved to ${join(config.banner.outputDir, fileName)}`);
-    console.log(JSON.stringify(fields, null, 2));
-    return;
-  }
-
   await updateWidget(config.discord, session.riotId || 'VALORANT', fields);
   console.log('Discord widget updated.');
 }
 
-main().catch((error) => {
+async function main(config, dryRun) {
+  const session = await login(config.riot);
+  writeCookieJar(config.riot.cookieJarPath, config.riot.cookieJarKey, session.cookies);
+  console.log(`Logged in as ${session.riotId || session.puuid} (${session.region}).`);
+
+  const [storefront, skinIndex] = await Promise.all([
+    getStorefront(session),
+    loadSkinIndex(config.language),
+  ]);
+  const store = parseStorefront(storefront);
+  const skins = describeOffers(store.daily, skinIndex);
+  const nightMarket = describeOffers(store.nightMarket, skinIndex);
+  if (skins.length === 0) throw new Error('The storefront did not contain any daily skins.');
+
+  for (const skin of skins) console.log(`  ${skin.name} - ${skin.price} VP`);
+
+  const now = new Date();
+  const fileName = `store-${now.toISOString().slice(0, 10)}.png`;
+  const banner = await renderBanner(skins, { fontPath: config.banner.fontPath });
+  mkdirSync(config.banner.outputDir, { recursive: true });
+  writeFileSync(join(config.banner.outputDir, fileName), banner);
+  writeFileSync(
+    join(config.banner.outputDir, 'store.json'),
+    JSON.stringify({ riotId: session.riotId, refreshesAt: store.refreshesAt, skins, nightMarket }, null, 2),
+  );
+
+  const message = buildStoreMessage({
+    skins,
+    nightMarket,
+    riotId: session.riotId,
+    refreshesAt: store.refreshesAt,
+    bannerFileName: fileName,
+    timeZone: config.timeZone,
+    now,
+  });
+
+  if (dryRun) {
+    console.log(`Dry run: banner saved to ${join(config.banner.outputDir, fileName)}`);
+    console.log(JSON.stringify(message, null, 2));
+    return;
+  }
+
+  const outputs = config.discord.outputs;
+  if (outputs.includes('dm')) {
+    await sendStoreDm(config.discord, message, { fileName, content: banner });
+    console.log('Store sent by DM.');
+  }
+  if (outputs.includes('widget')) {
+    await sendToWidget(config, { session, store, skins, banner, fileName, now });
+  }
+}
+
+const dryRun = process.argv.includes('--dry-run');
+const config = loadConfig();
+
+try {
+  assertConfig(config, { dryRun });
+  await main(config, dryRun);
+} catch (error) {
   console.error(`Sync failed: ${error.message}`);
+  if (!dryRun && config.discord.outputs.includes('dm')) {
+    const hint =
+      error instanceof RiotAuthError
+        ? 'Riot の Cookie が切れた可能性があります。README の手順で取り直して `RIOT_COOKIES` を更新してください。'
+        : null;
+    await sendErrorDm(config.discord, error, hint);
+  }
   process.exit(1);
-});
+}

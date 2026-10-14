@@ -1,7 +1,7 @@
 {
-  "name": "valorant-store-discord-widget",
+  "name": "valorant-store-discord-bot",
   "version": "1.0.0",
-  "description": "Show your daily VALORANT store skins on your Discord profile widget.",
+  "description": "Send your daily VALORANT store skins to yourself on Discord (DM or profile widget).",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
