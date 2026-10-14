@@ -1,0 +1,177 @@
+{
+  "_type": "discord-widget",
+  "version": 2,
+  "display_name": "VALORANT Daily Store",
+  "surfaces": {
+    "widget_top": {
+      "layout": "widget_top_hero",
+      "components": {
+        "hero_image": {
+          "fields": {
+            "image": {
+              "value_type": "data",
+              "presentation_type": "image",
+              "value": "store_banner"
+            }
+          }
+        },
+        "title": {
+          "fields": {
+            "text": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "store_title"
+            }
+          }
+        }
+      }
+    },
+    "widget_bottom": {
+      "layout": "widget_bottom_stats",
+      "components": {
+        "stat_1": {
+          "fields": {
+            "value": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "skin1_price_text"
+            },
+            "label": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "skin1_name"
+            }
+          }
+        },
+        "stat_2": {
+          "fields": {
+            "value": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "skin2_price_text"
+            },
+            "label": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "skin2_name"
+            }
+          }
+        },
+        "stat_3": {
+          "fields": {
+            "value": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "skin3_price_text"
+            },
+            "label": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "skin3_name"
+            }
+          }
+        },
+        "stat_4": {
+          "fields": {
+            "value": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "skin4_price_text"
+            },
+            "label": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "skin4_name"
+            }
+          }
+        },
+        "stat_5": {
+          "fields": {
+            "value": {
+              "value_type": "data",
+              "presentation_type": "number",
+              "value": "total_price"
+            },
+            "label": {
+              "value_type": "custom_string",
+              "presentation_type": "text",
+              "value": "合計 VP"
+            }
+          }
+        },
+        "stat_6": {
+          "fields": {
+            "value": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "refresh_at"
+            },
+            "label": {
+              "value_type": "custom_string",
+              "presentation_type": "text",
+              "value": "次の更新"
+            }
+          }
+        }
+      }
+    },
+    "mini_profile": {
+      "layout": "mini_profile_hero_stat",
+      "components": {
+        "hero_image": {
+          "fields": {
+            "image": {
+              "value_type": "data",
+              "presentation_type": "image",
+              "value": "store_banner"
+            }
+          }
+        },
+        "stat": {
+          "fields": {
+            "text": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "store_title"
+            }
+          }
+        }
+      }
+    },
+    "activity_accessory": {
+      "layout": "activity_accessory_stat",
+      "components": {
+        "stat": {
+          "fields": {
+            "text": {
+              "value_type": "data",
+              "presentation_type": "text",
+              "value": "store_summary"
+            }
+          }
+        }
+      }
+    },
+    "add_widget_preview": {
+      "layout": "add_widget_preview_hero",
+      "components": {
+        "hero_image": {
+          "fields": {
+            "image": {
+              "value_type": "application_asset",
+              "presentation_type": "image",
+              "value": "valorant-store-preview"
+            }
+          }
+        }
+      }
+    }
+  },
+  "assets": {
+    "valorant-store-preview": {
+      "asset_type": "image",
+      "content_type": "image/webp",
+      "image": "data:image/webp;base64,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"
+    }
+  }
+}

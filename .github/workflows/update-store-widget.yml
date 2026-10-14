@@ -1,0 +1,58 @@
+name: Update VALORANT store widget
+
+on:
+  schedule:
+    # The daily store resets at 00:00 UTC (09:00 JST).
+    - cron: '5 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write # publishes the banner image to the widget-assets branch
+
+concurrency:
+  group: store-widget
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install Japanese font for the banner
+        run: sudo apt-get update -q && sudo apt-get install -y -q fonts-noto-cjk
+
+      - run: npm ci
+
+      # The refreshed Riot cookies are kept between runs, encrypted with COOKIE_JAR_KEY.
+      - name: Restore Riot cookie jar
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/riot-cookies.enc
+          key: riot-cookies-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: riot-cookies-
+
+      - name: Sync store to Discord
+        run: npm start
+        env:
+          RIOT_COOKIES: ${{ secrets.RIOT_COOKIES }}
+          COOKIE_JAR_PATH: ${{ secrets.COOKIE_JAR_KEY != '' && '.cache/riot-cookies.enc' || '' }}
+          COOKIE_JAR_KEY: ${{ secrets.COOKIE_JAR_KEY }}
+          VALORANT_REGION: ${{ vars.VALORANT_REGION }}
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
+          DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
+          DISCORD_IDENTITY_ID: ${{ secrets.DISCORD_IDENTITY_ID }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          BANNER_PUBLISH: ${{ vars.BANNER_PUBLISH }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save Riot cookie jar
+        if: always() && hashFiles('.cache/riot-cookies.enc') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/riot-cookies.enc
+          key: riot-cookies-${{ github.run_id }}-${{ github.run_attempt }}

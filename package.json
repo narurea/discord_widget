@@ -1,0 +1,19 @@
+{
+  "name": "valorant-store-discord-widget",
+  "version": "1.0.0",
+  "description": "Show your daily VALORANT store skins on your Discord profile widget.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dry-run": "node src/index.js --dry-run",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.100"
+  }
+}
