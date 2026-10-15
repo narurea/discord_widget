@@ -2,8 +2,9 @@ name: Send VALORANT daily store
 
 on:
   schedule:
-    # The daily store resets at 00:00 UTC (09:00 JST).
-    - cron: '5 0 * * *'
+    # The daily store resets at 00:00 UTC (09:00 JST). Runs at an odd minute because
+    # GitHub delays scheduled runs most around the top of the hour.
+    - cron: '17 0 * * *'
   workflow_dispatch:
 
 permissions:
